@@ -166,7 +166,7 @@ function data_Collector()
 		time_Calculation()
 	end
 	
-	if component.isAvailable('me_controller') then
+	if component.isAvailable('me_controller') and display_Settings['ME_Storage_Support'] then
 		raw_Data['ME_Data'] = me_controller.getItemsInNetwork(ME_Filter)
 		
 		if raw_Data['ME_Data'][1] then -- Топ фикс ин зе ворлд
@@ -176,7 +176,7 @@ function data_Collector()
 		end
 	end
 	
-	if component.isAvailable('energy_device') then
+	if component.isAvailable('energy_device') and display_Settings['EIO_Capacitor_Support'] then
 		raw_Data['EIO_Capacity_Current'] = eio_capacitor.getEnergyStored()
 		raw_Data['EIO_Capacity_Max'] = eio_capacitor.getMaxEnergyStored()
 	end
