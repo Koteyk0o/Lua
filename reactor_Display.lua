@@ -91,6 +91,10 @@ function support_Check()
 		display_Settings['EIO_Capacitor_Support'] = false
 		os.sleep(3)
 	end
+	
+	if display_Settings['reactor_Storage_Mode'] then
+		display_Settings['reactor_Control'] = true
+	end
 end
 
 
