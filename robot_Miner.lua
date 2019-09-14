@@ -15,7 +15,7 @@ local hole_Size = { -- Размер ямы для выкапывания
 
 local robot_Settings = {
     action_Delay = 0, -- Задержка перед каждым действием
-    charging_Time = 10, -- Сколько секунд робот будет ждать зарядки инструмента
+    tool_Charging_Time = 10, -- Сколько секунд робот будет ждать зарядки инструмента
     tool_Keeping = true, -- Возврат для подзарядки инструмента
     inventory_Keeping = true, -- Возврат для выкладывания вещей
     navi_Data_Path = "/home/navi_Data.dat", -- Путь для сохранения навигационных данных (лучше не трогать)
@@ -91,40 +91,60 @@ end
 
 function inventory_Handling()
     local external_Inventory_Size = inventory_Controller.getInventorySize(sides.top)
+    local tool_Charge = 1
+    local tool_On_Charge = false
+
+    if robot.durability() <= 0.12 then -- Если бур надо заряжать - заряжаем
+        robot.select(1)
+        inventory_Controller.equip()
+        inventory_Controller.dropIntoSlot(sides.front, 1)
+
+        tool_On_Charge = true
+    end
 
     for int_Slot = 1, internal_Data["internal_Inventory_Size"] do -- Для каждой ячейки инвентаря робота
         robot.select(int_Slot)
 
         for ext_Slot = 1, external_Inventory_Size do
+            if robot.count(int_Slot) == 0 then -- Если нашли пустую ячейку ломаем цикл, не надо терять время
+                break
+            end
+
             if not inventory_Controller.getStackInSlot(sides.top, ext_Slot) then -- Искать пустую ячейку сундука
                 inventory_Controller.dropIntoSlot(sides.top, ext_Slot)
                 break -- В случае успешной выкладки прервать цикл для экономии времени
             end
         end
     end
-end
 
-
-
-function tool_Handling()
     robot.select(1)
-    inventory_Controller.equip()
-    inventory_Controller.dropIntoSlot(sides.front, 1)
-    os.sleep(robot_Settings["charging_Time"])
-    inventory_Controller.suckFromSlot(sides.front, 1)
-    inventory_Controller.equip()
+
+    if tool_On_Charge then -- Если был инструмент на зарядке
+        while tool_Charge > 0 do -- Спим пока уровень заряда инструмента ниже приемлимого
+            if inventory_Controller.getStackInSlot(sides.front, 1) then
+                tool_Charge = inventory_Controller.getStackInSlot(sides.front, 1)["damage"]
+            end
+
+            os.sleep(1)
+        end
+
+        inventory_Controller.suckFromSlot(sides.front, 1) -- Забираем бур с зарядки
+        inventory_Controller.equip()
+    end
 end
 
 
 
 function robot_Care()
     robot.turnAround() -- Надо развернуться для взаимодействия с МФСУ
-    tool_Handling()
-    inventory_Handling()
+    inventory_Handling() -- Взаимодействуем с инвентарем
     robot.turnAround() -- Надо развернуться обратно для выезда обратно
-    robot.select(1)
 
-    navi_To_Position()
+    while ((computer.energy() + 500) < computer.maxEnergy()) do -- Спим пока уровень заряда ниже приемлимого
+        os.sleep(1)
+    end
+
+    navi_To_Position() -- Возвращаемся обратно
     internal_Data["return_Requested"] = false
 end
 
@@ -145,7 +165,7 @@ function return_Check()
         end
     end
 
-    if computer.energy() <= 2500 then
+    if computer.energy() <= 10000 then
         internal_Data["return_Requested"] = true
         internal_Data["battery_Charging_Count"] = internal_Data["battery_Charging_Count"] + 1
     end
@@ -336,7 +356,7 @@ function start_Mining()
     
     print("Mining starts in 5 seconds...")
     print("Job: ", navi_Data["task_Blocks"], " blocks")
-    --os.sleep(5)
+    os.sleep(5)
 end
 
 
@@ -397,4 +417,9 @@ while true do
             os.sleep(0.5)
         end
     end
+	
+	if computer.energy() <= 500 then -- Если батарея села полностью, сохраняем маршрут и выключаемся
+		save_Navi()
+		computer.shutdown()
+	end
 end
