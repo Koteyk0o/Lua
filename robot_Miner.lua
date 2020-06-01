@@ -94,7 +94,7 @@ function inventory_Handling()
     local tool_Charge = 1
     local tool_On_Charge = false
 
-    if robot.durability() <= 0.12 then -- Если бур надо заряжать - заряжаем
+    if robot.durability() <= 0.12 then
         robot.select(1)
         inventory_Controller.equip()
         inventory_Controller.dropIntoSlot(sides.front, 1)
@@ -102,25 +102,25 @@ function inventory_Handling()
         tool_On_Charge = true
     end
 
-    for int_Slot = 1, internal_Data["internal_Inventory_Size"] do -- Для каждой ячейки инвентаря робота
+    for int_Slot = 1, internal_Data["internal_Inventory_Size"] do
         robot.select(int_Slot)
 
         for ext_Slot = 1, external_Inventory_Size do
-            if robot.count(int_Slot) == 0 then -- Если нашли пустую ячейку ломаем цикл, не надо терять время
+            if robot.count(int_Slot) == 0 then
                 break
             end
 
-            if not inventory_Controller.getStackInSlot(sides.top, ext_Slot) then -- Искать пустую ячейку сундука
+            if not inventory_Controller.getStackInSlot(sides.top, ext_Slot) then
                 inventory_Controller.dropIntoSlot(sides.top, ext_Slot)
-                break -- В случае успешной выкладки прервать цикл для экономии времени
+                break
             end
         end
     end
 
     robot.select(1)
 
-    if tool_On_Charge then -- Если был инструмент на зарядке
-        while tool_Charge > 0 do -- Спим пока уровень заряда инструмента ниже приемлимого
+    if tool_On_Charge then
+        while tool_Charge > 0 do
             if inventory_Controller.getStackInSlot(sides.front, 1) then
                 tool_Charge = inventory_Controller.getStackInSlot(sides.front, 1)["damage"]
             end
@@ -128,7 +128,7 @@ function inventory_Handling()
             os.sleep(1)
         end
 
-        inventory_Controller.suckFromSlot(sides.front, 1) -- Забираем бур с зарядки
+        inventory_Controller.suckFromSlot(sides.front, 1)
         inventory_Controller.equip()
     end
 end
@@ -140,7 +140,7 @@ function robot_Care()
     inventory_Handling() -- Взаимодействуем с инвентарем
     robot.turnAround() -- Надо развернуться обратно для выезда обратно
 
-    while ((computer.energy() + 500) < computer.maxEnergy()) do -- Спим пока уровень заряда ниже приемлимого
+    while ((computer.energy() + 500) < computer.maxEnergy()) do
         os.sleep(1)
     end
 
@@ -181,7 +181,7 @@ end
 function right_Rotate()
     robot.turnRight()
 
-    while not robot.forward() do -- Бить блок впереди пока путь не освободится
+    while not robot.forward() do
         robot.swing(sides.left)
     end
 
@@ -199,7 +199,7 @@ end
 function left_Rotate()
     robot.turnLeft()
 
-    while not robot.forward() do -- Бить блок впереди пока путь не освободится
+    while not robot.forward() do
         robot.swing(sides.left)
     end
 
@@ -234,11 +234,11 @@ end
 
 
 function go_Descent()
-    while not robot.forward() do -- Бить блок впереди пока путь не освободится
+    while not robot.forward() do
         robot.swing(sides.front)
     end
 
-    while not robot.down() do -- Бить блок снизу пока путь не освободится
+    while not robot.down() do
         robot.swingDown()
     end
 
